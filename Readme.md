@@ -4,6 +4,7 @@
 
 - frontend
 - loading bar/circle
+- containerize app (with docker)
 - multiprocessing (speed up)
 - size limit on uploaded files
 - multi format support (png, jpeg, etc)
