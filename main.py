@@ -18,9 +18,18 @@ async def upload_image(uploaded_file: UploadFile = File(...), quality=85):
     # Read the image file
     img = Image.open(uploaded_file.file)
 
+    # Get the file format of the uploaded image
+    content_type = uploaded_file.content_type
+    if content_type == "image/jpeg":
+        format = "JPEG"
+    elif content_type == "image/png":
+        format = "PNG"
+    else:
+        return {"error": "Unsupported file format."}
+
     # Compress the image based on the quality
     output_io = io.BytesIO()
-    img.save(output_io, format='JPEG', optimize=True, quality=int(quality))
+    img.save(output_io, format=format, optimize=True, quality=int(quality))
     output_io.seek(0)
 
     # Save the compressed image
