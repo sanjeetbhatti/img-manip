@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  img-manip:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1  # Ensure logs are flushed to the console
