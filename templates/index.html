@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compress Image Service</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Upload an Image</h1>
+    <span>Formats supported: PNG and JPEG</span>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="uploaded_file" accept="image/*" required>
+        <label for="quality-input">Quality</label>
+        <input type="number" name="quality" id="quality-input" value="85" min="1" max="100" required>
+        <button type="submit">Upload</button>
+    </form>
+    <div id="result"></div>
+    <div id="downloadLinkContainer" style="display: none;">
+        <a id="downloadLink" href="" download>Download Compressed Image</a>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>
