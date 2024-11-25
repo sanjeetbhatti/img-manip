@@ -5,6 +5,7 @@
 - [X] containerize app (with docker)
 - [X] multi format support (png, jpeg, etc)
 - [X] frontend
+- [X] add database to store previous results
 - [ ] loading bar/circle
 - [ ] display file stats
 - [ ] multiprocessing (speed up)
