@@ -60,6 +60,19 @@ def initialize_db():
         cursor.close()
         db_conn.close()
 
+def store_in_db(filename, url):
+    db_conn = get_db_connection()
+    cursor = db_conn.cursor()
+    query = "INSERT INTO images (filename, url) VALUES (%s, %s)"
+    try:
+        cursor.execute(query, (filename, url))
+        db_conn.commit()
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+    finally:
+        cursor.close()
+        db_conn.close()
+
 initialize_db()
 
 # Setup static files
@@ -95,20 +108,12 @@ async def upload_image(uploaded_file: UploadFile = File(...), quality=85):
         out_file.write(output_io.getvalue())
 
     # Store the image download link in the database
-    # TODO: Extract this to a separate function
-    db_conn = get_db_connection()
-    cursor = db_conn.cursor()
-    query = "INSERT INTO images (filename, url) VALUES (%s, %s)"
-    filename = uploaded_file.filename
-    url = f"http://127.0.0.1:8000/download/{filename}"
-    cursor.execute(query, (filename, url))
-    db_conn.commit()
-    cursor.close()
-    db_conn.close()
+    url = f"http://127.0.0.1:8000/download/{uploaded_file.filename}"
+    store_in_db(uploaded_file.filename, url)
 
     return {
         "filename": uploaded_file.filename,
-        "url": f"http://127.0.0.1:8000/download/{uploaded_file.filename}",
+        "url": url,
         "message": "Image compressed successfully!"
     }
 
