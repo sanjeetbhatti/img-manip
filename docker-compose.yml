@@ -9,15 +9,19 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
-    environment:
+    environment: #TODO: Read this from .env file
       - PYTHONUNBUFFERED=1  # Ensure logs are flushed to the console
+      - DB_HOST=db
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_NAME=image_db
     depends_on:
       - db
 
   db:
     image: mysql:latest
     restart: always
-    environment:
+    environment: #TODO: Read this from .env file
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=image_db
       - MYSQL_USER=user

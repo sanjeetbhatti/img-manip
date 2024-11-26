@@ -14,11 +14,10 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 app = FastAPI()
 
 # MySQL database configuration
-# TODO: change this to be read from .env file
-DB_HOST = 'db'
-DB_USER = 'user'
-DB_PASSWORD = 'password'
-DB_NAME = 'image_db'
+DB_HOST = os.getenv('DB_HOST')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_NAME = os.getenv('DB_NAME')
 
 def get_db_connection():
     for i in range(5):
