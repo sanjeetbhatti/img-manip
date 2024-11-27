@@ -11,5 +11,34 @@ document.getElementById('uploadForm').onsubmit = async (e) => {
         const downloadLink = document.getElementById('downloadLink');
         downloadLink.href = result.url;
         document.getElementById('downloadLinkContainer').style.display = 'block';
+
+        setTimeout(getAllPreviousResults, 2000);
     }
 };
+
+function getAllPreviousResults() {
+    fetch('/images')
+        .then(response => response.json())
+        .then(data => {
+            let imagesList = document.getElementById('images-list');
+            imagesList.innerHTML = '';
+
+            // TODO: Iterate over last 5 results only
+            data.images.forEach(image => {
+                let listItem = document.createElement('li');
+                let link = document.createElement('a');
+                link.href = image[1];
+                link.textContent = image[0];
+                listItem.appendChild(link);
+                imagesList.appendChild(listItem);
+            });
+            if (data.images.length > 0) {
+                document.getElementById('prev-res').style.display = 'block';
+            }
+        })
+        .catch(error => console.error(error));
+}
+
+window.addEventListener('load', () => {
+    getAllPreviousResults();
+});

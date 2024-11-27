@@ -19,6 +19,16 @@
     <div id="downloadLinkContainer" style="display: none;">
         <a id="downloadLink" href="" download>Download Compressed Image</a>
     </div>
+
+    <br>
+    <div id="prev-res" style="display: none;">
+        <h1>Previous Results</h1>
+        <ul id="images-list">
+            {% for image in images %}
+                <li><a href="{{ image.url }}">{{ image.filename }}</a></li>
+            {% endfor %}
+    </ul>
+    </div>
     <script src="/static/script.js"></script>
 </body>
 </html>

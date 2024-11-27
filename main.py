@@ -129,3 +129,21 @@ async def download_file(file_name: str):
         )
     else:
         return {"error": "File not found"}, 404
+
+@app.get("/images")
+async def get_images():
+    db_conn = get_db_connection()
+    cursor = db_conn.cursor()
+    try:
+        query = "SELECT filename, url FROM images"
+        cursor.execute(query)
+        results = cursor.fetchall()
+        print(results)
+        return {"images": [(filename, url) for filename, url in results]}
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+    finally:
+        cursor.close()
+        db_conn.close()
+
+    return {"images": []}
