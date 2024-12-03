@@ -7,11 +7,15 @@ from PIL import Image
 import io
 import os
 import time
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 OUTPUT_DIR = "output_folder"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 app = FastAPI()
+
+executor = ThreadPoolExecutor(max_workers=4)
 
 # MySQL database configuration
 DB_HOST = os.getenv('DB_HOST')
@@ -60,7 +64,7 @@ def initialize_db():
         cursor.close()
         db_conn.close()
 
-def store_in_db(filename, url):
+def store_in_db_sync(filename, url):
     db_conn = get_db_connection()
     cursor = db_conn.cursor()
     query = "INSERT INTO images (filename, url) VALUES (%s, %s)"
@@ -72,6 +76,37 @@ def store_in_db(filename, url):
     finally:
         cursor.close()
         db_conn.close()
+
+async def store_in_db(filename, url):
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(executor, store_in_db_sync, filename, url)
+
+def get_images_sync():
+    db_conn = get_db_connection()
+    cursor = db_conn.cursor()
+    try:
+        query = "SELECT filename, url FROM images"
+        cursor.execute(query)
+        results = cursor.fetchall()
+        return [(filename, url) for filename, url in results]
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return []
+    finally:
+        cursor.close()
+        db_conn.close()
+
+async def get_images_async():
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(executor, get_images_sync)
+
+def save_file_sync(output_path, file_data):
+    with open(output_path, "wb") as out_file:
+        out_file.write(file_data)
+
+async def save_file(output_path, file_data):
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(executor, save_file_sync, output_path, file_data)
 
 initialize_db()
 
@@ -101,15 +136,15 @@ async def upload_image(uploaded_file: UploadFile = File(...), quality=85):
     output_io = io.BytesIO()
     img.save(output_io, format=format, optimize=True, quality=int(quality))
     output_io.seek(0)
+    file_data = output_io.getvalue()
 
     # Save the compressed image
     output_path = os.path.join(OUTPUT_DIR, uploaded_file.filename)
-    with open(output_path, "wb") as out_file:
-        out_file.write(output_io.getvalue())
+    await save_file(output_path, file_data)
 
     # Store the image download link in the database
     url = f"http://127.0.0.1:8000/download/{uploaded_file.filename}"
-    store_in_db(uploaded_file.filename, url)
+    await store_in_db(uploaded_file.filename, url)
 
     return {
         "filename": uploaded_file.filename,
@@ -132,18 +167,5 @@ async def download_file(file_name: str):
 
 @app.get("/images")
 async def get_images():
-    db_conn = get_db_connection()
-    cursor = db_conn.cursor()
-    try:
-        query = "SELECT filename, url FROM images"
-        cursor.execute(query)
-        results = cursor.fetchall()
-        print(results)
-        return {"images": [(filename, url) for filename, url in results]}
-    except mysql.connector.Error as err:
-        print(f"Error: {err}")
-    finally:
-        cursor.close()
-        db_conn.close()
-
-    return {"images": []}
+    results = await get_images_async()
+    return {"images": results}
