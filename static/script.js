@@ -1,18 +1,27 @@
 document.getElementById('uploadForm').onsubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const response = await fetch('/upload/', {
-        method: 'POST',
-        body: formData
-    });
-    const result = await response.json();
-    document.getElementById('result').innerText = result.message || result.error;
-    if (result.url) {
-        const downloadLink = document.getElementById('downloadLink');
-        downloadLink.href = result.url;
-        document.getElementById('downloadLinkContainer').style.display = 'block';
-
-        setTimeout(getAllPreviousResults, 2000);
+    const spinner = document.getElementById('uploadSpinner');
+    spinner.style.display = 'block';
+    document.getElementById('result').innerText = '';
+    document.getElementById('downloadLinkContainer').style.display = 'none';
+    try {
+        const formData = new FormData(e.target);
+        const response = await fetch('/upload/', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        document.getElementById('result').innerText = result.message || result.error;
+        if (result.url) {
+            const downloadLink = document.getElementById('downloadLink');
+            downloadLink.href = result.url;
+            document.getElementById('downloadLinkContainer').style.display = 'block';
+            setTimeout(getAllPreviousResults, 2000);
+        }
+    } catch (err) {
+        document.getElementById('result').innerText = 'An error occurred during upload.';
+    } finally {
+        spinner.style.display = 'none';
     }
 };
 
