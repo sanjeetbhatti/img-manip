@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Request
+from fastapi import FastAPI, UploadFile, File, Request, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -120,37 +120,42 @@ async def root(request: Request):
 
 @app.post("/upload/")
 async def upload_image(uploaded_file: UploadFile = File(...), quality=85):
-    # Read the image file
-    img = Image.open(uploaded_file.file)
+    try:
+        # Read the image file
+        img = Image.open(uploaded_file.file)
 
-    # Get the file format of the uploaded image
-    content_type = uploaded_file.content_type
-    if content_type == "image/jpeg":
-        format = "JPEG"
-    elif content_type == "image/png":
-        format = "PNG"
-    else:
-        return {"error": "Unsupported file format."}
+        # Get the file format of the uploaded image
+        content_type = uploaded_file.content_type
+        if content_type == "image/jpeg":
+            format = "JPEG"
+        elif content_type == "image/png":
+            format = "PNG"
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file format.")
 
-    # Compress the image based on the quality
-    output_io = io.BytesIO()
-    img.save(output_io, format=format, optimize=True, quality=int(quality))
-    output_io.seek(0)
-    file_data = output_io.getvalue()
+        # Compress the image based on the quality
+        output_io = io.BytesIO()
+        img.save(output_io, format=format, optimize=True, quality=int(quality))
+        output_io.seek(0)
+        file_data = output_io.getvalue()
 
-    # Save the compressed image
-    output_path = os.path.join(OUTPUT_DIR, uploaded_file.filename)
-    await save_file(output_path, file_data)
+        # Save the compressed image
+        output_path = os.path.join(OUTPUT_DIR, uploaded_file.filename)
+        await save_file(output_path, file_data)
 
-    # Store the image download link in the database
-    url = f"http://127.0.0.1:8000/download/{uploaded_file.filename}"
-    await store_in_db(uploaded_file.filename, url)
+        # Store the image download link in the database
+        url = f"http://127.0.0.1:8000/download/{uploaded_file.filename}"
+        await store_in_db(uploaded_file.filename, url)
 
-    return {
-        "filename": uploaded_file.filename,
-        "url": url,
-        "message": "Image compressed successfully!"
-    }
+        return {
+            "filename": uploaded_file.filename,
+            "url": url,
+            "message": "Image compressed successfully!"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Unsupported or invalid file. Please upload a valid PNG or JPEG image.")
 
 @app.get("/download/{file_name}")
 async def download_file(file_name: str):

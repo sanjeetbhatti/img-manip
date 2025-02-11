@@ -11,12 +11,20 @@ document.getElementById('uploadForm').onsubmit = async (e) => {
             body: formData
         });
         const result = await response.json();
-        document.getElementById('result').innerText = result.message || result.error;
-        if (result.url) {
-            const downloadLink = document.getElementById('downloadLink');
-            downloadLink.href = result.url;
-            document.getElementById('downloadLinkContainer').style.display = 'block';
-            setTimeout(getAllPreviousResults, 2000);
+        
+        if (response.ok) {
+            // Success case
+            document.getElementById('result').innerText = result.message || result.error;
+            if (result.url) {
+                const downloadLink = document.getElementById('downloadLink');
+                downloadLink.href = result.url;
+                document.getElementById('downloadLinkContainer').style.display = 'block';
+                setTimeout(getAllPreviousResults, 2000);
+            }
+        } else {
+            // Error case (400, 500, etc.)
+            const errorMessage = result.detail || result.error || 'An error occurred during upload.';
+            document.getElementById('result').innerText = errorMessage;
         }
     } catch (err) {
         document.getElementById('result').innerText = 'An error occurred during upload.';
