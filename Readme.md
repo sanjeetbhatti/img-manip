@@ -12,7 +12,7 @@
 - [X] frontend
 - [X] add database to store previous results
 - [X] concurrent user support (async/await with ThreadPoolExecutor)
-- [ ] loading bar/circle
+- [X] loading bar/circle
 - [ ] display file stats
 - [ ] multiprocessing (speed up)
 - [ ] size limit on uploaded files

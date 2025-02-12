@@ -40,8 +40,9 @@ function getAllPreviousResults() {
             let imagesList = document.getElementById('images-list');
             imagesList.innerHTML = '';
 
-            // TODO: Iterate over last 5 results only
-            data.images.forEach(image => {
+            // Show only last 5 results
+            const lastFiveImages = data.images.slice(-5);
+            lastFiveImages.forEach(image => {
                 let listItem = document.createElement('li');
                 let link = document.createElement('a');
                 link.href = image[1];
@@ -49,7 +50,7 @@ function getAllPreviousResults() {
                 listItem.appendChild(link);
                 imagesList.appendChild(listItem);
             });
-            if (data.images.length > 0) {
+            if (lastFiveImages.length > 0) {
                 document.getElementById('prev-res').style.display = 'block';
             }
         })
