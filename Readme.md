@@ -13,7 +13,7 @@
 - [X] add database to store previous results
 - [X] concurrent user support (async/await with ThreadPoolExecutor)
 - [X] loading bar/circle
-- [ ] display file stats
+- [X] display file stats
 - [ ] multiprocessing (speed up)
 - [ ] size limit on uploaded files
 - [ ] delete compressed files after 1 hour (on this server)

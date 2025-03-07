@@ -121,6 +121,9 @@ async def root(request: Request):
 @app.post("/upload/")
 async def upload_image(uploaded_file: UploadFile = File(...), quality=85):
     try:
+        # Get original file size
+        original_size = len(uploaded_file.file.read())
+        uploaded_file.file.seek(0)  
         # Read the image file
         img = Image.open(uploaded_file.file)
 
@@ -138,6 +141,12 @@ async def upload_image(uploaded_file: UploadFile = File(...), quality=85):
         img.save(output_io, format=format, optimize=True, quality=int(quality))
         output_io.seek(0)
         file_data = output_io.getvalue()
+        
+        # Calculate compressed file size
+        compressed_size = len(file_data)
+        
+        # Calculate compression ratio
+        compression_ratio = round((1 - compressed_size / original_size) * 100, 1) if original_size > 0 else 0
 
         # Save the compressed image
         output_path = os.path.join(OUTPUT_DIR, uploaded_file.filename)
@@ -150,7 +159,14 @@ async def upload_image(uploaded_file: UploadFile = File(...), quality=85):
         return {
             "filename": uploaded_file.filename,
             "url": url,
-            "message": "Image compressed successfully!"
+            "message": "Image compressed successfully!",
+            "stats": {
+                "original_size": original_size,
+                "compressed_size": compressed_size,
+                "compression_ratio": compression_ratio,
+                "format": format,
+                "quality": int(quality)
+            }
         }
     except HTTPException:
         raise

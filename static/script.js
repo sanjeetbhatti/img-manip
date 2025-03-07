@@ -4,6 +4,7 @@ document.getElementById('uploadForm').onsubmit = async (e) => {
     spinner.style.display = 'block';
     document.getElementById('result').innerText = '';
     document.getElementById('downloadLinkContainer').style.display = 'none';
+    document.getElementById('fileStats').style.display = 'none';
     try {
         const formData = new FormData(e.target);
         const response = await fetch('/upload/', {
@@ -19,6 +20,12 @@ document.getElementById('uploadForm').onsubmit = async (e) => {
                 const downloadLink = document.getElementById('downloadLink');
                 downloadLink.href = result.url;
                 document.getElementById('downloadLinkContainer').style.display = 'block';
+                
+                // Display file stats
+                if (result.stats) {
+                    displayFileStats(result.stats);
+                }
+                
                 setTimeout(getAllPreviousResults, 2000);
             }
         } else {
@@ -32,6 +39,49 @@ document.getElementById('uploadForm').onsubmit = async (e) => {
         spinner.style.display = 'none';
     }
 };
+
+function displayFileStats(stats) {
+    const statsContainer = document.getElementById('fileStats');
+    const originalSizeKB = (stats.original_size / 1024).toFixed(1);
+    const compressedSizeKB = (stats.compressed_size / 1024).toFixed(1);
+    
+    statsContainer.innerHTML = `
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">File Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">Original Size</small>
+                        <div class="fw-bold">${originalSizeKB} KB</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Compressed Size</small>
+                        <div class="fw-bold">${compressedSizeKB} KB</div>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <small class="text-muted">Compression</small>
+                        <div class="fw-bold text-success">${stats.compression_ratio}% smaller</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Quality</small>
+                        <div class="fw-bold">${stats.quality}%</div>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <small class="text-muted">Format</small>
+                        <div class="fw-bold">${stats.format}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    statsContainer.style.display = 'block';
+}
 
 function getAllPreviousResults() {
     fetch('/images')
