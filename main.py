@@ -24,6 +24,19 @@ DB_PASSWORD = os.getenv('DB_PASSWORD')
 DB_NAME = os.getenv('DB_NAME')
 
 def get_db_connection():
+    """
+    Establish a connection to the MySQL database with retry logic.
+    
+    Attempts to connect to the database up to 5 times with 2-second delays
+    between attempts. This handles cases where the database might not be
+    ready immediately after container startup.
+    
+    Returns:
+        mysql.connector.connection.MySQLConnection: Database connection object
+        
+    Raises:
+        Exception: If connection fails after 5 attempts
+    """
     for i in range(5):
         try:
             conn = mysql.connector.connect(
@@ -39,6 +52,12 @@ def get_db_connection():
     raise Exception("Could not connect to MySQL after several attempts.")
 
 def initialize_db():
+    """
+    Initialize the database by creating the images table if it doesn't exist.
+    
+    Creates a table to store metadata about processed images including
+    filename and download URL. This function is called at application startup.
+    """
     db_conn = get_db_connection()
     cursor = db_conn.cursor()
 
@@ -65,6 +84,13 @@ def initialize_db():
         db_conn.close()
 
 def store_in_db_sync(filename, url):
+    """
+    Store image metadata in the database synchronously.
+    
+    Args:
+        filename (str): The name of the uploaded file
+        url (str): The download URL for the compressed image
+    """
     db_conn = get_db_connection()
     cursor = db_conn.cursor()
     query = "INSERT INTO images (filename, url) VALUES (%s, %s)"
@@ -78,10 +104,26 @@ def store_in_db_sync(filename, url):
         db_conn.close()
 
 async def store_in_db(filename, url):
+    """
+    Store image metadata in the database asynchronously.
+    
+    Wraps the synchronous database operation in a ThreadPoolExecutor
+    to prevent blocking the event loop.
+    
+    Args:
+        filename (str): The name of the uploaded file
+        url (str): The download URL for the compressed image
+    """
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(executor, store_in_db_sync, filename, url)
 
 def get_images_sync():
+    """
+    Retrieve all processed images from the database synchronously.
+    
+    Returns:
+        list: List of tuples containing (filename, url) pairs
+    """
     db_conn = get_db_connection()
     cursor = db_conn.cursor()
     try:
@@ -97,14 +139,40 @@ def get_images_sync():
         db_conn.close()
 
 async def get_images_async():
+    """
+    Retrieve all processed images from the database asynchronously.
+    
+    Wraps the synchronous database operation in a ThreadPoolExecutor
+    to prevent blocking the event loop.
+    
+    Returns:
+        list: List of tuples containing (filename, url) pairs
+    """
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(executor, get_images_sync)
 
 def save_file_sync(output_path, file_data):
+    """
+    Save file data to disk synchronously.
+    
+    Args:
+        output_path (str): The path where the file should be saved
+        file_data (bytes): The file data to write
+    """
     with open(output_path, "wb") as out_file:
         out_file.write(file_data)
 
 async def save_file(output_path, file_data):
+    """
+    Save file data to disk asynchronously.
+    
+    Wraps the synchronous file operation in a ThreadPoolExecutor
+    to prevent blocking the event loop.
+    
+    Args:
+        output_path (str): The path where the file should be saved
+        file_data (bytes): The file data to write
+    """
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(executor, save_file_sync, output_path, file_data)
 
@@ -116,14 +184,44 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
+    """
+    Serve the main application page.
+    
+    Args:
+        request (Request): FastAPI request object
+        
+    Returns:
+        HTMLResponse: Rendered index.html template
+    """
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/upload/")
 async def upload_image(uploaded_file: UploadFile = File(...), quality=85):
+    """
+    Upload and compress an image file.
+    
+    Accepts an image file (PNG or JPEG) and compresses it based on the
+    specified quality setting. Returns file statistics and download URL.
+    
+    Args:
+        uploaded_file (UploadFile): The image file to process
+        quality (int): Compression quality (1-100, default 85)
+        
+    Returns:
+        dict: JSON response containing:
+            - filename: Original filename
+            - url: Download URL for compressed image
+            - message: Success message
+            - stats: File statistics (size, compression ratio, etc.)
+            
+    Raises:
+        HTTPException: 400 if file format is unsupported or file is invalid
+    """
     try:
         # Get original file size
         original_size = len(uploaded_file.file.read())
         uploaded_file.file.seek(0)  
+        
         # Read the image file
         img = Image.open(uploaded_file.file)
 
@@ -175,6 +273,18 @@ async def upload_image(uploaded_file: UploadFile = File(...), quality=85):
 
 @app.get("/download/{file_name}")
 async def download_file(file_name: str):
+    """
+    Download a compressed image file.
+    
+    Args:
+        file_name (str): The name of the file to download
+        
+    Returns:
+        FileResponse: The file for download
+        
+    Raises:
+        HTTPException: 404 if file is not found
+    """
     file_path = os.path.join(OUTPUT_DIR, file_name)
     if os.path.exists(file_path):
         return FileResponse(
@@ -188,5 +298,11 @@ async def download_file(file_name: str):
 
 @app.get("/images")
 async def get_images():
+    """
+    Retrieve all processed images from the database.
+    
+    Returns:
+        dict: JSON response containing list of (filename, url) pairs
+    """
     results = await get_images_async()
     return {"images": results}

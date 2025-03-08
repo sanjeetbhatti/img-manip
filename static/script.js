@@ -1,3 +1,9 @@
+/**
+ * Handle form submission for image upload.
+ * Shows loading spinner, uploads file, and displays results or errors.
+ * 
+ * @param {Event} e - The form submission event
+ */
 document.getElementById('uploadForm').onsubmit = async (e) => {
     e.preventDefault();
     const spinner = document.getElementById('uploadSpinner');
@@ -40,6 +46,17 @@ document.getElementById('uploadForm').onsubmit = async (e) => {
     }
 };
 
+/**
+ * Display file statistics in a Bootstrap card.
+ * Shows original size, compressed size, compression ratio, quality, and format.
+ * 
+ * @param {Object} stats - File statistics object
+ * @param {number} stats.original_size - Original file size in bytes
+ * @param {number} stats.compressed_size - Compressed file size in bytes
+ * @param {number} stats.compression_ratio - Compression percentage
+ * @param {string} stats.format - File format (JPEG/PNG)
+ * @param {number} stats.quality - Quality setting used
+ */
 function displayFileStats(stats) {
     const statsContainer = document.getElementById('fileStats');
     const originalSizeKB = (stats.original_size / 1024).toFixed(1);
@@ -83,6 +100,11 @@ function displayFileStats(stats) {
     statsContainer.style.display = 'block';
 }
 
+/**
+ * Fetch and display all previous image results.
+ * Retrieves the last 5 processed images from the server and displays them
+ * in the previous results section.
+ */
 function getAllPreviousResults() {
     fetch('/images')
         .then(response => response.json())
@@ -107,6 +129,9 @@ function getAllPreviousResults() {
         .catch(error => console.error(error));
 }
 
+/**
+ * Initialize the application by loading previous results on page load.
+ */
 window.addEventListener('load', () => {
     getAllPreviousResults();
 });
